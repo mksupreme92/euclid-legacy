@@ -1,0 +1,4 @@
+test.euclid
+*.swp
+*.bak
+.DS_Store
