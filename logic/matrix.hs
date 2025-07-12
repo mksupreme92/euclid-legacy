@@ -1,4 +1,9 @@
-module Logic.Matrix (Matrix, matrixFromList, identityMatrix, matrixVectorProduct) where
+module Logic.Matrix 
+  ( Matrix
+  , matrixFromList
+  , identityMatrix
+  , matrixVectorProduct
+  ) where
 
 type Matrix a = [[a]]
 
