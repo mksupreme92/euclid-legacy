@@ -1,4 +1,6 @@
 test.euclid
+test.hs
+test/
 *.swp
 *.bak
 .DS_Store

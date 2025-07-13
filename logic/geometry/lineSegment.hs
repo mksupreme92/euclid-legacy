@@ -1,5 +1,3 @@
--- logic/geometry/LineSegment.hs
-
 module Logic.Geometry.LineSegment
   ( LineSegment(..)
   , defineLineSegment
