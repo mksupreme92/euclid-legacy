@@ -23,7 +23,7 @@ prettyPrintMetric (FieldMetric _) = "<field metric (function)>"
 loadInitialSpace :: IO (Space Double)
 loadInitialSpace = do
   files <- listDirectory "."
-  let euclidFiles = filter (\f -> takeExtension f == ".euclid") files
+  let euclidFiles = filter (\f -> takeExtension f == ".elementa") files
   case euclidFiles of
     (f:_) -> do
       putStrLn $ "📄 Initializing from file: " ++ f
@@ -45,7 +45,7 @@ loadInitialSpace = do
 
     [] -> do  -- ✅ aligned correctly now
       let fallback = defaultSpace
-      putStrLn "⚠️ No .euclid file found."
+      putStrLn "⚠️ No .elementa file found."
       putStrLn "🔧 Initializing with default settings:"
       putStrLn $ "✅ Dimension: " ++ show (dim fallback)
       putStrLn "📐 Metric:"
@@ -67,7 +67,21 @@ parseSpaceHeader input = do
   dim <- readMaybe dimStr
   matStr <- stripPrefix "metric constant " =<< metricLine
   matrix <- readMaybe matStr :: Maybe [[Double]]
-  return (Space dim (ConstantMetric matrix))
+
+  if isValidConstantMetric dim matrix
+    then Just (Space dim (ConstantMetric matrix))
+    else Nothing
+
+-- Only applies to ConstantMetric
+isValidConstantMetric :: Int -> [[a]] -> Bool
+isValidConstantMetric dim mat =
+  length mat == dim && all (\row -> length row == dim) mat
+
+-- placeholder for future:
+-- parseMetric :: String -> Int -> Maybe (MetricType Double)
+-- parseMetric input dim
+--  | "constant" `isPrefixOf` input = ...
+--  | "field" `isPrefixOf` input    = Just (FieldMetric yourFunction)
 
 -- Helpers
 findLinePrefix :: String -> [String] -> Maybe String
