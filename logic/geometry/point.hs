@@ -7,6 +7,7 @@
 module Logic.Geometry.Point
   ( Point
   , pointFromList
+  , vectorFromPoint
   , pointDimension
   , isValidPoint
   , assertPointInSpace
@@ -25,6 +26,11 @@ type Point a = Vector a
 -- | Constructor
 pointFromList :: [a] -> Point a
 pointFromList = vectorFromList
+
+-- | Convert a Point to a Vector
+vectorFromPoint :: Point a -> Vector a
+vectorFromPoint = id
+
 
 -- | Get the dimension of a point
 pointDimension :: Point a -> Int

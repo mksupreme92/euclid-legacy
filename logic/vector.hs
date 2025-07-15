@@ -4,10 +4,12 @@ module Logic.Vector
   , vectorAdd
   , vectorSub
   , dotProduct
+  , crossProduct
   , scalarMul
   , norm
   , normalize
   ) where
+
 
 type Vector a = [a]
 
