@@ -1,22 +1,20 @@
 module Logic.Geometry.Face (
-  Face,
+  Face(..),
   BoundingBox,
   faceFromPoints,
   isPointOnFace,
-  facePlane,
-  faceVertices,
+  --facePlane,
+  --faceVertices,
   boundingBox,
+  isSimplePolygon,
+  enforceCCWWinding,
   checkConvexity
-
 ) where
 
 import Logic.Geometry.Point
 import Logic.Geometry.Plane
 import Logic.Vector
-import Logic.Geometry.Point (pointAdd)
-import Data.List (sortBy, nub)
-import Data.Function (on)
-import Debug.Trace (trace)
+
 
 -- | A face is a set of coplanar, ordered vertices
 -- Assumes the polygon is simple (non-intersecting, not self-overlapping)
@@ -29,76 +27,84 @@ data Face a = Face
 type BoundingBox a = (Point a, Point a)
 
 -- | Construct a face from a list of points (must be >= 3, coplanar, same dim)
-faceFromPoints :: (Floating a, Ord a, Show a) => [Point a] -> Maybe (Face a)
+-- Enforces counter-clockwise winding and disallows self-intersecting polygons
+faceFromPoints :: (Floating a, Ord a) => [Point a] -> Maybe (Face a)
 faceFromPoints pts
   | length pts < 3 = Nothing
   | not (allSameDim pts) = Nothing
   | otherwise = case planeFromPoints (pts !! 0) (pts !! 1) (pts !! 2) of
       Just pl ->
-        if all (isPointOnPlane pl) pts
-          then Just (Face pl (standardizeWinding (Face pl pts)))
-          else Nothing
+        if all (isPointOnPlane pl) pts && isSimplePolygon pts then
+          let orderedPts = enforceCCWWinding pl pts
+              candidateFace = Face pl orderedPts
+          in if checkConvexity candidateFace
+             then Just candidateFace
+             else Nothing
+        else Nothing
       Nothing -> Nothing
   where
     allSameDim (x:xs) = all ((== pointDimension x) . pointDimension) xs
     allSameDim [] = True
 
--- | Standardize winding order of a polygon face so that it is counter-clockwise
-standardizeWinding :: (Floating a, Ord a, Show a) => Face a -> [Point a]
-standardizeWinding (Face (Plane origin normal) pts) =
+-- | Enforce counter-clockwise winding order
+enforceCCWWinding :: (Floating a, Ord a) => Plane a -> [Point a] -> [Point a]
+enforceCCWWinding (Plane origin normal) pts =
   let Just u = normalize =<< anyPerpendicular normal
       Just v = normalize =<< crossProduct normal u
 
-      -- Project to 2D
       project2D pt =
         let Just vec = vectorSub (vectorFromPoint pt) (vectorFromPoint origin)
             Just x = dotProduct vec u
             Just y = dotProduct vec v
         in (x, y)
 
-      unproject2D (x, y) =
-        let Just vec = vectorAdd [scalarMul x u, scalarMul y v]
-            Just pt  = pointAdd origin vec
-        in pt
-
       projPts = map project2D pts
-      areaSum = sum $ zipWith (\(x1,y1) (x2,y2) -> (x1 * y2 - x2 * y1))
-                              projPts (tail projPts ++ [head projPts])
+      area = 0.5 * sum (zipWith (\(x1, y1) (x2, y2) -> x1 * y2 - x2 * y1)
+                                 projPts (tail projPts ++ [head projPts]))
+  in if area < 0 then reverse pts else pts
 
-      -- Use convex hull if shape is not convex
-      repairedPts = if not (checkConvexity (Face (Plane origin normal) pts))
-                      then map unproject2D (convexHull projPts)
-                      else if areaSum < 0
-                            then reverse pts
-                            else pts
-  in repairedPts
+-- | Check if a polygon is simple (non-self-intersecting)
+isSimplePolygon :: (Ord a, Floating a) => [Point a] -> Bool
+isSimplePolygon pts
+  | length pts < 3 = False
+  | otherwise = case planeFromPoints (pts !! 0) (pts !! 1) (pts !! 2) of
+      Just (Plane origin normal) ->
+        let Just u = normalize =<< anyPerpendicular normal
+            Just v = normalize =<< crossProduct normal u
 
+            project2D pt =
+              let Just vec = vectorSub (vectorFromPoint pt) (vectorFromPoint origin)
+                  Just x = dotProduct vec u
+                  Just y = dotProduct vec v
+              in (x, y)
 
--- | Compute the 2D convex hull of a set of points using Graham scan
-convexHull :: (Ord a, Floating a) => [(a, a)] -> [(a, a)]
-convexHull pts = nub $ init lower ++ init upper
-  where
-    sorted = sortBy (\(x1, y1) (x2, y2) -> compare x1 x2 <> compare y1 y2) (nub pts)
+            projPts = map project2D pts
+            n = length projPts
+            segments = zip projPts (tail projPts ++ [head projPts])
+            nonAdjacent (i, j) = abs (i - j) > 1 && abs (i - j) < n - 1
+            pairs = [ ((i, segments !! i), (j, segments !! j))
+                    | i <- [0..n-1], j <- [i+1..n-1], nonAdjacent (i,j) ]
+        in all (\((_, (a1,a2)), (_, (b1,b2))) -> not (segmentsIntersect2D a1 a2 b1 b2)) pairs
+      Nothing -> False
 
-    turn (x1, y1) (x2, y2) (x3, y3) =
-      (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)
+-- | Check if two line segments intersect
+--segmentsIntersect :: (Ord a, Floating a) => Point a -> Point a -> Point a -> Point a -> Bool
+--segmentsIntersect p1 p2 p3 p4 =
+--  let orientation a b c = signum ((b !! 0 - a !! 0) * (c !! 1 - a !! 1) - (b !! 1 - a !! 1) * (c !! 0 - a !! 0))
+--      o1 = orientation p1 p2 p3
+--      o2 = orientation p1 p2 p4
+--      o3 = orientation p3 p4 p1
+--      o4 = orientation p3 p4 p2
+--  in o1 /= o2 && o3 /= o4
 
-    buildHull = foldl step []
-      where
-        step (p2:p1:ps) p
-          | turn p1 p2 p <= 0 = step (p1:ps) p
-          | otherwise         = p2:p1:ps ++ [p]
-        step ps p = ps ++ [p]
-
-    lower = buildHull sorted
-    upper = buildHull (reverse sorted)
-
-
--- | Compute signed area of a 2D polygon
-signedPolygonArea :: Floating a => [(a, a)] -> a
-signedPolygonArea pts =
-  0.5 * sum [ x1 * y2 - x2 * y1
-            | ((x1, y1), (x2, y2)) <- zip pts (tail pts ++ [head pts]) ]
+segmentsIntersect2D :: (Ord a, Floating a) => (a,a) -> (a,a) -> (a,a) -> (a,a) -> Bool
+segmentsIntersect2D p1 p2 p3 p4 =
+  let orientation a b c = signum ((snd b - snd a) * (fst c - fst a) - (fst b - fst a) * (snd c - snd a))
+      o1 = orientation p1 p2 p3
+      o2 = orientation p1 p2 p4
+      o3 = orientation p3 p4 p1
+      o4 = orientation p3 p4 p2
+  in o1 /= o2 && o3 /= o4
 
 -- | Check if a point lies on the face (must lie on plane and within boundary)
 -- Currently only checks planar membership — polygon boundary check is TODO
@@ -113,16 +119,9 @@ boundingBox (Face _ pts) =
       maxCoords = [maximum [p !! i | p <- pts] | i <- [0 .. dims - 1]]
   in (minCoords, maxCoords)
 
--- | Top-level convexity check: uses fast method first, falls back to robust if needed.
-checkConvexity :: (Floating a, Ord a, Show a) => Face a -> Bool
-checkConvexity face =
-  if checkConvexitySimple face
-    then True
-    else trace "🧭 Falling back to checkConvexityRobust" (checkConvexityRobust face)
-
--- | Check if a face is convex using 2D projection and signed area method
-checkConvexitySimple :: (Floating a, Ord a) => Face a -> Bool
-checkConvexitySimple (Face (Plane origin normal) pts)
+-- | Check if a face is convex using sign consistency of edge cross products in 2D
+checkConvexity :: (Floating a, Ord a) => Face a -> Bool
+checkConvexity (Face (Plane origin normal) pts)
   | length pts < 3 = False
   | otherwise =
       let Just u = normalize =<< anyPerpendicular normal
@@ -134,51 +133,23 @@ checkConvexitySimple (Face (Plane origin normal) pts)
                 Just y = dotProduct vec v
             in (x, y)
 
-          projPts = map project2D pts
+          projected = map project2D pts
+          n = length projected
 
-          signedAreas = zipWith3 (\(x1,y1) (x2,y2) (x3,y3) ->
-                                    let dx1 = x2 - x1
-                                        dy1 = y2 - y1
-                                        dx2 = x3 - x2
-                                        dy2 = y3 - y2
-                                    in dx1 * dy2 - dx2 * dy1)
-                        projPts
-                        (tail projPts ++ [head projPts])
-                        (drop 2 (cycle projPts))
+          crossZ (x1, y1) (x2, y2) = x1 * y2 - x2 * y1
 
-          allPositive = all (> 0) signedAreas
-          allNegative = all (< 0) signedAreas
+          -- Compute cross product between edges at each vertex
+          turns = [ let a = projected !! i
+                        b = projected !! ((i + 1) `mod` n)
+                        c = projected !! ((i + 2) `mod` n)
+                        ab = (fst b - fst a, snd b - snd a)
+                        bc = (fst c - fst b, snd c - snd b)
+                    in crossZ ab bc
+                  | i <- [0 .. n - 1]
+                  ]
 
-      in allPositive || allNegative
-
--- | Robust convexity check using angle sign consistency in 2D
-checkConvexityRobust :: (Floating a, Ord a) => Face a -> Bool
-checkConvexityRobust (Face (Plane origin normal) pts)
-  | length pts < 3 = False
-  | otherwise =
-      let Just u = normalize =<< anyPerpendicular normal
-          Just v = normalize =<< crossProduct normal u
-
-          project2D pt =
-            let Just vec = vectorSub (vectorFromPoint pt) (vectorFromPoint origin)
-                Just x = dotProduct vec u
-                Just y = dotProduct vec v
-            in (x, y)
-
-          projPts = map project2D pts
-
-          edgeVectors = zipWith (\(x1,y1) (x2,y2) -> (x2 - x1, y2 - y1))
-                                 projPts
-                                 (tail projPts ++ [head projPts])
-
-          angleSigns = zipWith (\(ux,uy) (vx,vy) -> ux*vy - uy*vx)
-                                edgeVectors
-                                (tail edgeVectors ++ [head edgeVectors])
-
-          allPositive = all (> 0) angleSigns
-          allNegative = all (< 0) angleSigns
-
-      in allPositive || allNegative
+          signs = filter (/= 0) (map signum turns)
+      in not (null signs) && all (> 0) signs
 
 -- | Helper to get a perpendicular vector (not necessarily normalized)
 anyPerpendicular :: (Num a, Eq a) => [a] -> Maybe [a]
