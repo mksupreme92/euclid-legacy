@@ -22,7 +22,9 @@ planeFromPoints p1 p2 p3
       d1 <- vectorSub v1 v0
       d2 <- vectorSub v2 v0
       normal <- crossProduct d1 d2
-      return (Plane p1 normal)
+      if all (== 0) normal
+         then Nothing  -- points are collinear
+         else return (Plane p1 normal)
 
 -- | Check if a point lies on the plane (dot product of normal with (p - base) == 0)
 isPointOnPlane :: (Num a, Eq a) => Plane a -> Point a -> Bool

@@ -13,6 +13,7 @@ module Logic.Geometry.Point
   , assertPointInSpace
   , translatePoint
   , distanceBetween
+  , pointAdd
   ) where
 
 import Logic.Vector
@@ -56,6 +57,11 @@ distanceBetween :: Floating a => Space a -> Point a -> Point a -> Maybe a
 distanceBetween space p1 p2 =
   distanceIn space p1 p1 p2
 
+-- Adds a vector to a point
+pointAdd :: Num a => Point a -> [a] -> Maybe (Point a)
+pointAdd pt vec
+  | length pt == length vec = Just (zipWith (+) pt vec)
+  | otherwise = Nothing
 
 
 
