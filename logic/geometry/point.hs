@@ -14,6 +14,7 @@ module Logic.Geometry.Point
   , translatePoint
   , distanceBetween
   , pointAdd
+  , definePoint
   ) where
 
 import Logic.Vector

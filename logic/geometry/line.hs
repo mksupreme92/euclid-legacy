@@ -3,11 +3,9 @@
 -- Design Rule: All geometric operations are space-aware and dimension-safe.
 
 module Logic.Geometry.Line
-  ( Line
+  ( Line(..)
   , defineLine
   , defineLineFromPoints
-  , lineDirection
-  , linePoint
   ) where
 
 import Logic.Space
