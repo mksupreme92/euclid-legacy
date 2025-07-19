@@ -7,10 +7,6 @@
 - [x] `metric.hs` — Inner products, distance, etc.
 - [x] `space.hs` — Space definitions with dimension + metric
 
-## 🧠 Abstract Mathematical Structures
-
-- [ ] `topology.hs` — Open sets, neighborhoods, continuity (abstract topology)
-- [ ] `manifold.hs` — Charts, atlases, transition maps (geometry-aware)
 
 ## 📐 Geometry Primitives
 
@@ -20,7 +16,6 @@
 - [x] `plane.hs`
 - [x] `face.hs` — Polygon face with convexity, winding, etc.
 - [ ] `curve.hs` — Parametric curves, splines
-- [ ] `geodesic.hs` — Metric-aware geodesics and shortest paths
 - [ ] `surface.hs` — Surface logic (parametric + mesh support)
 - [ ] `volume.hs` — Volumetric cells, bounded regions
 
@@ -30,10 +25,20 @@
 - [ ] `boolean.hs` (optional) — Boolean operations (union, subtract, intersect)
 - [ ] `collision.hs` (optional) — Collision and intersection logic
 
-## 🧩 Language, Parsing, and Rendering
+## 🔢 Numerical Methods
+
+- [x] `numerics/integrate.hs` — Runge-Kutta 4 (RK4) and general-purpose ODE integration
+- [ ] `numerics/differentiate.hs` — Numerical differentiation (finite difference, etc.)
+- [ ] `numerics/solve.hs` (future) — Linear/nonlinear equation solvers
+- [ ] `numerics/interpolate.hs` (future) — Lagrange, spline, and parametric interpolation
+
+## 🧩 Language Layer
 
 - [ ] `elementa.hs` — Elementa DSL language layer (syntax + structure)
 - [ ] `parser.hs` — Parser for Elementa DSL
+
+## 🖼️ Rendering and Visualization
+
 - [ ] `render.hs` — Rendering engine (ASCII, OpenGL/WebGL, SVG, etc.)
 
 ## 🏗️ CAD Layer: Higher-Level Constructs
