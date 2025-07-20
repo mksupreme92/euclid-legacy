@@ -21,22 +21,19 @@ evaluateCurve :: Curve a -> Double -> Point a
 evaluateCurve c t = curveFunc c t
 
 -- | Construct a linear parametric curve from point p0 to p1 in space
-linearCurve :: (Floating a, Eq a) => Space a -> Point a -> Point a -> Maybe (Curve a)
-linearCurve sp p0 p1 =
-  let
-    -- Ensure both points are in the same space
-    _ = assertPointInSpace sp p0
-    _ = assertPointInSpace sp p1
+linearCurve :: Space Double -> Point Double -> Point Double -> Maybe (Curve Double)
+linearCurve sp p0 p1 = do
+  -- Validate points
+  _ <- assertPointInSpace sp p0
+  _ <- assertPointInSpace sp p1
 
-    -- Compute vector from p0 to p1
-    v = vectorFromPoint sp p1 >>= \vp1 ->
-        vectorFromPoint sp p0 >>= \vp0 ->
-        Just (vectorSub vp1 vp0)
+  -- Vector difference
+  let v = zipWith (-) p1 p0  -- [Double]
 
-    -- Function from parameter t ∈ [0,1] to point on the line
-    f t = do
-      dv <- v
-      let scaled = scalarMul t dv
-      translatePoint sp p0 scaled
-  in
-    Just $ Curve f (0, 1) sp
+  -- Curve function: p(t) = p0 + t*(p1 - p0)
+  let f t =
+        case translatePoint sp p0 (scalarMul t v) of
+          Just pt -> pt
+          Nothing -> error "linearCurve: translation failed"
+
+  return $ Curve f (0, 1) sp

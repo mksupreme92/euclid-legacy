@@ -16,9 +16,11 @@
 - [x] `plane.hs`
 - [x] `face.hs` — Polygon face with convexity, winding, etc.
 - [ ] `curve.hs` — Parametric curves, splines
-    - linearCurve fails to compile and needs refactoring
-    - Current issues: type mismatches (Maybe, Vector, Point), rigid type vars
-    - Refactor with clean monadic flow and consistent type usage
+    - [x] linearCurve tests for 2D–5D, negatives, irrationals, and extrapolation
+• Implemented and validated linearCurve over extended domain
+• Tests include negative coords, irrational points (π, e, √2), and extrapolated t
+• Verified results with ✅ status across all scenarios
+    - [] Parametric Nonlinear Curves: Begin considering Bezier, Hermite, or B-spline support
 - [ ] `surface.hs` — Surface logic (parametric + mesh support)
 - [ ] `volume.hs` — Volumetric cells, bounded regions
 
