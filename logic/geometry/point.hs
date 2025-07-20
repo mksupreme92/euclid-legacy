@@ -14,6 +14,7 @@ module Logic.Geometry.Point
   , translatePoint
   , distanceBetween
   , pointAdd
+  , pointSubtract
   , definePoint
   ) where
 
@@ -64,6 +65,11 @@ pointAdd pt vec
   | length pt == length vec = Just (zipWith (+) pt vec)
   | otherwise = Nothing
 
+-- | Subtract two points to get a displacement vector
+pointSubtract :: Num a => Point a -> Point a -> Maybe (Vector a)
+pointSubtract p1 p0
+  | length p1 == length p0 = Just (zipWith (-) p1 p0)
+  | otherwise               = Nothing
 
 
 

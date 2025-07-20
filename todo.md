@@ -1,4 +1,4 @@
-# 🧱 Euclid Project TODO
+# 🧱 Project Euclid TODO
 
 ## 🔧 Core Infrastructure
 
@@ -16,6 +16,9 @@
 - [x] `plane.hs`
 - [x] `face.hs` — Polygon face with convexity, winding, etc.
 - [ ] `curve.hs` — Parametric curves, splines
+    - linearCurve fails to compile and needs refactoring
+    - Current issues: type mismatches (Maybe, Vector, Point), rigid type vars
+    - Refactor with clean monadic flow and consistent type usage
 - [ ] `surface.hs` — Surface logic (parametric + mesh support)
 - [ ] `volume.hs` — Volumetric cells, bounded regions
 
