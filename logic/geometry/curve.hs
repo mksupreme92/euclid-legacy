@@ -16,15 +16,10 @@ data Curve a
       , domain     :: (Double, Double)
       , curveSpace :: Space a
       }
-  | ParametricCurve
-      { parametricFunc  :: Double -> [Double]
-      , parametricDomain :: (Double, Double)
-      , parametricSpace  :: Space Double
-      }
 
 -- | Evaluate the curve at a given parameter t
-evaluateCurve :: Curve a -> Double -> Point a
-evaluateCurve c t = curveFunc c t
+evaluateCurve :: Curve a -> Double -> Maybe (Point a)
+evaluateCurve (Curve f _ _) t = Just (f t)
 
 -- | Construct a linear parametric curve from point p0 to p1 in space
 linearCurve :: Space Double -> Point Double -> Point Double -> Maybe (Curve Double)
@@ -43,3 +38,15 @@ linearCurve sp p0 p1 = do
           Nothing -> error "linearCurve: translation failed"
 
   return $ Curve f (0, 1) sp
+
+
+  -- | Construct a general parametric curve from a function Double -> [Double]
+parametricCurve :: Space Double -> (Double -> [Double]) -> (Double, Double) -> Maybe (Curve Double)
+parametricCurve sp f dom =
+  let wrapped t = f t
+      validDim = dim sp
+      sample = f (fst dom)
+  in if length sample == validDim
+        then Just $ Curve wrapped dom sp
+        else Nothing
+
