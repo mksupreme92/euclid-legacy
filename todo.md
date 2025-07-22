@@ -18,7 +18,7 @@
 - [x] `curve.hs` — Parametric curves, splines
     - [x] linearCurve tests for 2D–5D, negatives, irrationals, and extrapolation
     - [x] Parametric Nonlinear Curves
-- [ ] `surface.hs` — Surface logic (parametric + mesh support)
+- [x] `surface.hs` — Surface logic (parametric + mesh support)
 - [ ] `volume.hs` — Volumetric cells, bounded regions
 
 ## ⚙️ Higher-Level Operations
