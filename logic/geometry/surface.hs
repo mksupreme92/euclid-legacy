@@ -62,8 +62,12 @@ validateSurfaceMesh (SurfaceMesh vertices faces _) =
 
 
 -- Export SurfaceMesh to Wavefront OBJ format as a String
-exportSurfaceMeshOBJ :: (Show a) => SurfaceMesh a -> String
+exportSurfaceMeshOBJ :: (Show a) => SurfaceMesh a -> Either String String
 exportSurfaceMeshOBJ (SurfaceMesh vertices faces _) =
-  let vLines = map (\v -> "v " ++ unwords (map show v)) vertices
-      fLines = map (\f -> "f " ++ unwords (map (show . (+1)) f)) faces
-  in unlines (vLines ++ fLines)
+    if all (\v -> length v == 3) vertices
+    then
+      let vLines = map (\v -> "v " ++ unwords (map show v)) vertices
+          fLines = map (\f -> "f " ++ unwords (map (show . (+1)) f)) faces
+      in Right (unlines (vLines ++ fLines))
+    else
+      Left "OBJ export only supports 3D surfaces. Found vertex with dimension ≠ 3."
