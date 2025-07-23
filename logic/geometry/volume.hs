@@ -5,10 +5,13 @@ module Logic.Geometry.Volume
   , structuredTetrahedralMesh
   , volumeMeshVolume
   , validateVolumeMesh
+  , tetVolume
+  , nearZeroTol
   ) where
 
 import Logic.Numerics.Sampling (sampleRectilinearGrid)
-import Data.List (nub)
+import Data.List (nub, sort)
+import Data.Ratio ((%))
 
 -- | A parametric volume maps from R^3 to R^n embedded space
 data Volume a
@@ -37,14 +40,15 @@ data VolumeMesh a = VolumeMesh
   } deriving (Eq, Show)
 
 -- | Build a structured tetrahedral mesh from a parametric volume and a regular (u,v,w) grid.
---   Each hexahedral cell is split into 5 tetrahedra with a consistent pattern.
+--   Each hexahedral cell is split into 5 non-degenerate tets using a consistent pattern.
 structuredTetrahedralMesh
-  :: (Fractional a, Enum a)
+  :: (Floating a, Enum a, Ord a)
   => Volume a               -- ^ parametric volume
   -> (Int, Int, Int)        -- ^ (uSteps, vSteps, wSteps)
   -> VolumeMesh a
 structuredTetrahedralMesh vol@(ParametricVolume _ ((umin,vmin,wmin),(umax,vmax,wmax))) (uSteps,vSteps,wSteps) =
-  let -- sample grid vertices
+  let
+      -- sample grid vertices
       verts = sampleParametricVolume vol (uSteps, vSteps, wSteps)
 
       nu = uSteps
@@ -72,8 +76,7 @@ structuredTetrahedralMesh vol@(ParametricVolume _ ((umin,vmin,wmin),(umax,vmax,w
             v101 = idx (i+1) j     (k+1)
             v011 = idx i     (j+1) (k+1)
             v111 = idx (i+1) (j+1) (k+1)
-        in  [ -- split the hex into 5 non-degenerate tets
-              [v000, v100, v010, v001]
+        in  [ [v000, v100, v010, v001]
             , [v100, v110, v010, v111]
             , [v100, v010, v001, v111]
             , [v010, v001, v011, v111]
@@ -86,8 +89,13 @@ structuredTetrahedralMesh vol@(ParametricVolume _ ((umin,vmin,wmin),(umax,vmax,w
         , j <- [0 .. nv-2]
         , k <- [0 .. nw-2]
         ]
-      tetList = concat allTets
-  in VolumeMesh verts tetList
+
+      tetList      = concat allTets
+      sortedTets   = map sort tetList
+      dedupTets    = nub sortedTets
+      filteredTets = filter (\is -> tetVolume verts is > nearZeroTol) dedupTets
+
+  in VolumeMesh verts filteredTets
 
 -- | Determinant of a 3x3 matrix given as column vectors.
 det3 :: Num a => [a] -> [a] -> [a] -> a
@@ -111,6 +119,10 @@ tetVolume _ _ = 0
 volumeMeshVolume :: (Floating a) => VolumeMesh a -> a
 volumeMeshVolume (VolumeMesh vs ts) = sum (map (tetVolume vs) ts)
 
+-- | Generic tolerance for near-zero checks
+nearZeroTol :: Fractional a => a
+nearZeroTol = fromRational (1 % (10 ^ (12 :: Int)))
+
 -- | Basic validation: indices in range, 4 distinct verts, non-zero volume
 validateVolumeMesh :: (Floating a, Ord a) => VolumeMesh a -> Bool
 validateVolumeMesh (VolumeMesh vs ts) =
@@ -119,5 +131,6 @@ validateVolumeMesh (VolumeMesh vs ts) =
         length is == 4
         && all (\ix -> ix >= 0 && ix < n) is
         && length (nub is) == 4
-        && tetVolume vs is > 1e-12  -- allow tiny numeric noise
+        && tetVolume vs is > tol
+      tol = nearZeroTol
   in all validTet ts
