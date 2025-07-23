@@ -83,7 +83,7 @@ main = do
   createDirectoryIfMissing True outDir
 
   let meshes =
-        [ ("saddle.obj", generateSurfaceMesh saddle 20 20)
+        [ ("saddle.obj", generateSurfaceMesh saddle 100 100)
         ]
 
   forM_ meshes $ \(filename, mesh) ->

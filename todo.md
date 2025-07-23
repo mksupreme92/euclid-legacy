@@ -18,8 +18,8 @@
 - [x] `curve.hs` — Parametric curves, splines
     - [x] linearCurve tests for 2D–5D, negatives, irrationals, and extrapolation
     - [x] Parametric Nonlinear Curves
-- [x] `surface.hs` — Surface logic (parametric + mesh support)
-- [ ] `volume.hs` — Volumetric cells, bounded regions
+- [x] `surface.hs` — Surface logic (parametric + mesh support + area integration)
+- [ ] `volume.hs` — Parametric volume logic (ℝ³ → ℝⁿ), tetrahedral meshing, volume integration
 
 ## ⚙️ Higher-Level Operations
 
@@ -31,6 +31,7 @@
 
 - [x] `numerics/integrate.hs` — Runge-Kutta 4 (RK4) and general-purpose ODE integration
 - [ ] `numerics/differentiate.hs` — Numerical differentiation (finite difference, etc.)
+- [ ] `numerics/jacobian.hs` — Jacobian matrix and determinant computations for volume integration
 - [ ] `numerics/solve.hs` (future) — Linear/nonlinear equation solvers
 - [ ] `numerics/interpolate.hs` (future) — Lagrange, spline, and parametric interpolation
 

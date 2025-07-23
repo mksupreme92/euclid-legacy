@@ -1,5 +1,7 @@
 module Logic.Geometry.Surface where
 
+import Logic.Vector (Vector, vectorSub, crossProduct, norm)
+
 import Logic.Space (Space(..))
 import qualified Logic.Space as Space
 import Data.List (nub)
@@ -71,3 +73,19 @@ exportSurfaceMeshOBJ (SurfaceMesh vertices faces _) =
       in Right (unlines (vLines ++ fLines))
     else
       Left "OBJ export only supports 3D surfaces. Found vertex with dimension ≠ 3."
+
+-- | Compute surface area from a SurfaceMesh
+surfaceMeshArea :: Floating a => SurfaceMesh a -> a
+surfaceMeshArea (SurfaceMesh vertices faces space) =
+  let triangleArea [i, j, k] =
+        let a = vertices !! i
+            b = vertices !! j
+            c = vertices !! k
+            ab = zipWith (-) b a
+            ac = zipWith (-) c a
+        in case crossProduct ab ac of
+            Just n  -> maybe 0 (/2) (norm n)
+            Nothing -> 0
+      triangleArea _ = 0
+  in sum (map triangleArea faces)
+
