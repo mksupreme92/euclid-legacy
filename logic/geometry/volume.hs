@@ -7,6 +7,7 @@ module Logic.Geometry.Volume
   , validateVolumeMesh
   , tetVolume
   , nearZeroTol
+  , exportVolumeMeshToMesh
   ) where
 
 import Logic.Numerics.Sampling (sampleRectilinearGrid)
@@ -134,3 +135,22 @@ validateVolumeMesh (VolumeMesh vs ts) =
         && tetVolume vs is > tol
       tol = nearZeroTol
   in all validTet ts
+
+
+--------------------------------------------------------------------------------
+-- Export: .mesh (MEDIT format)
+--------------------------------------------------------------------------------
+
+-- | Export a VolumeMesh to the .mesh ASCII format (MEDIT compatible)
+exportVolumeMeshToMesh :: (Show a, RealFrac a) => FilePath -> VolumeMesh a -> IO ()
+exportVolumeMeshToMesh path (VolumeMesh verts tets) = do
+  let header = "MeshVersionFormatted 1\nDimension 3\n"
+      verticesSection =
+        "Vertices\n" ++ show (length verts) ++ "\n" ++
+        unlines [unwords (map show (take 3 v)) ++ " 0" | v <- verts]
+      tetsSection =
+        "Tetrahedra\n" ++ show (length tets) ++ "\n" ++
+        unlines [unwords (map (show . (+1)) tet) ++ " 0" | tet <- tets]
+      footer = "End\n"
+      content = header ++ verticesSection ++ tetsSection ++ footer
+  writeFile path content
